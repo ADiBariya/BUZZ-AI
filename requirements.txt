@@ -1,1 +1,7 @@
-
+torch
+transformers
+diffusers
+safetensors
+flask
+pillow
+tk
