@@ -26,24 +26,6 @@ BUZZ-AI is a sleek desktop app that uses **Stable Diffusion XL** to generate stu
 - `OpenCV`, `Pillow`
 
 ---
-
-## 📁 Folder Structure
-BUZZ-AI/
-├── model/
-│ ├── pipeline.py # Stable Diffusion XL pipeline logic
-│ └── config.py # MODEL_PATH & output config
-├── utils/
-│ ├── logger.py # Logging setup
-│ └── io.py # Filename utilities
-├── outputs/ # Generated images saved here
-├── frontend_gui.py # PyQt6 GUI app
-├── run_cli.py # CLI runner script
-├── models/ # Put your .safetensors file here
-└── README.md
-
-
----
-
 ##🔧 Setup Instructions
 
 1. **Clone the repo**
