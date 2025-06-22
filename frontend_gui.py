@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt
 from model.pipeline import generate, load_pipeline
 
 MODEL_PATH = r"C:\Users\ahira\BUZZ-AI\models\AnythingXL_xl.safetensors"
+#upload it according to you and also change model path according to your wish!
 
 class BuzzAIGui(QWidget):
     def __init__(self):
