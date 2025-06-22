@@ -1,96 +1,115 @@
-# frontend_gui.py
-import sys
 import os
+import sys
+import threading
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QHBoxLayout
+    QApplication, QWidget, QLabel, QVBoxLayout, QPushButton,
+    QLineEdit, QMessageBox, QFileDialog, QHBoxLayout, QProgressBar
 )
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QFont, QIcon
 from PyQt6.QtCore import Qt
+
 from model.pipeline import generate, load_pipeline
 
 MODEL_PATH = r"C:\Users\ahira\BUZZ-AI\models\AnythingXL_xl.safetensors"
-#upload it according to you and also change model path according to your wish!
 
-class BuzzAIGui(QWidget):
+class BuzzImageGenApp(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("BUZZ-AI ImageGen")
-        self.setGeometry(100, 100, 800, 600)
-        self.setStyleSheet("background-color: #121212; color: #FFFFFF;")
-
-        self.image_path = None
-        self.init_ui()
-
-        # Load model pipeline
         load_pipeline(MODEL_PATH)
+        self.setWindowTitle("🚀 BUZZ AI - Image Generator")
+        self.setFixedSize(512, 640)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+                color: #ffffff;
+                font-family: 'Segoe UI';
+            }
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                padding: 10px;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+            QLineEdit {
+                padding: 10px;
+                font-size: 14px;
+                border-radius: 4px;
+                border: 1px solid #555;
+                background-color: #2d2d2d;
+                color: #fff;
+            }
+            QLabel {
+                font-size: 13px;
+            }
+        """)
 
-    def init_ui(self):
         layout = QVBoxLayout()
 
-        self.title = QLabel("BUZZ-AI: Anime Image Generator")
-        self.title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.title.setStyleSheet("font-size: 22px; font-weight: bold;")
-        layout.addWidget(self.title)
-
         self.prompt_input = QLineEdit()
-        self.prompt_input.setPlaceholderText("Enter prompt (e.g., anime girl in rain)...")
-        self.prompt_input.setStyleSheet("padding: 10px; font-size: 16px;")
+        self.prompt_input.setPlaceholderText("💡 Enter your prompt here...")
         layout.addWidget(self.prompt_input)
 
-        btn_layout = QHBoxLayout()
+        self.generate_button = QPushButton("🎨 Generate Image")
+        self.generate_button.clicked.connect(self.generate_image)
+        layout.addWidget(self.generate_button)
 
-        self.generate_btn = QPushButton("🎨 Generate")
-        self.generate_btn.clicked.connect(self.generate_image)
-        self.generate_btn.setStyleSheet("background-color: #03DAC6; padding: 10px;")
-        btn_layout.addWidget(self.generate_btn)
+        self.progress = QProgressBar()
+        self.progress.setMaximum(0)
+        self.progress.setMinimum(0)
+        self.progress.setVisible(False)
+        layout.addWidget(self.progress)
 
-        self.save_btn = QPushButton("💾 Save")
-        self.save_btn.clicked.connect(self.save_image)
-        self.save_btn.setEnabled(False)
-        self.save_btn.setStyleSheet("background-color: #BB86FC; padding: 10px;")
-        btn_layout.addWidget(self.save_btn)
-
-        layout.addLayout(btn_layout)
-
-        self.image_label = QLabel("Image will appear here")
+        self.image_label = QLabel("🔍 Generated image will appear here")
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.image_label.setStyleSheet("border: 1px dashed gray; padding: 20px;")
         layout.addWidget(self.image_label)
 
+        self.download_button = QPushButton("⬇️ Open in Folder")
+        self.download_button.setVisible(False)
+        self.download_button.clicked.connect(self.open_in_folder)
+        layout.addWidget(self.download_button)
+
         self.setLayout(layout)
+        self.last_image_path = None
 
     def generate_image(self):
         prompt = self.prompt_input.text().strip()
         if not prompt:
-            QMessageBox.warning(self, "Missing Prompt", "Please enter a prompt!")
+            QMessageBox.warning(self, "No Prompt", "Please enter a prompt to generate an image.")
             return
 
-        self.image_label.setText("Generating image...")
-        QApplication.processEvents()
+        self.progress.setVisible(True)
+        self.image_label.setText("⏳ Generating... Please wait...")
+        self.download_button.setVisible(False)
 
+        threading.Thread(target=self._generate_image_thread, args=(prompt,), daemon=True).start()
+
+    def _generate_image_thread(self, prompt):
         try:
             path = generate(prompt)
-            self.image_path = path
-            pixmap = QPixmap(path).scaled(600, 400, Qt.AspectRatioMode.KeepAspectRatio)
-            self.image_label.setPixmap(pixmap)
-            self.save_btn.setEnabled(True)
+            self.last_image_path = path
+            self.show_generated_image(path)
         except Exception as e:
-            QMessageBox.critical(self, "Generation Error", str(e))
+            self.image_label.setText("❌ Failed to generate image.")
+            QMessageBox.critical(self, "Error", f"An error occurred:\n{e}")
+        finally:
+            self.progress.setVisible(False)
 
-    def save_image(self):
-        if self.image_path:
-            save_path, _ = QFileDialog.getSaveFileName(self, "Save Image", "buzz_output.png", "PNG Files (*.png)")
-            if save_path:
-                try:
-                    os.replace(self.image_path, save_path)
-                    QMessageBox.information(self, "Saved", f"Image saved to:\n{save_path}")
-                except Exception as e:
-                    QMessageBox.critical(self, "Save Error", str(e))
+    def show_generated_image(self, path):
+        pixmap = QPixmap(path)
+        pixmap = pixmap.scaledToWidth(460, Qt.TransformationMode.SmoothTransformation)
+        self.image_label.setPixmap(pixmap)
+        self.download_button.setVisible(True)
 
+    def open_in_folder(self):
+        if self.last_image_path:
+            folder = os.path.dirname(self.last_image_path)
+            os.startfile(folder)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    window = BuzzAIGui()
+    window = BuzzImageGenApp()
     window.show()
     sys.exit(app.exec())
