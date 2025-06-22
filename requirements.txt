@@ -5,3 +5,5 @@ safetensors
 flask
 pillow
 tk
+pyqt6
+dotenv
