@@ -6,45 +6,26 @@ from PyQt6.QtWidgets import (
     QLineEdit, QMessageBox, QFileDialog, QHBoxLayout, QProgressBar
 )
 from PyQt6.QtGui import QPixmap, QFont, QIcon
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QTimer
 
 from model.pipeline import generate, load_pipeline
 
-MODEL_PATH = r"C:\Users\ahira\BUZZ-AI\models\AnythingXL_xl.safetensors"
+MODEL_PATH = r"C:\Users\ahira\BUZZ-AI\models\AnythingXL_xl.safetensors" #change this according to your path!!
 
 class BuzzImageGenApp(QWidget):
     def __init__(self):
         super().__init__()
-        load_pipeline(MODEL_PATH)
+
+        self.model_loaded = False
+
+        # GUI setup
         self.setWindowTitle("🚀 BUZZ AI - Image Generator")
         self.setFixedSize(512, 640)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #1e1e1e;
-                color: #ffffff;
-                font-family: 'Segoe UI';
-            }
-            QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                padding: 10px;
-                border-radius: 6px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;
-            }
-            QLineEdit {
-                padding: 10px;
-                font-size: 14px;
-                border-radius: 4px;
-                border: 1px solid #555;
-                background-color: #2d2d2d;
-                color: #fff;
-            }
-            QLabel {
-                font-size: 13px;
-            }
-        """)
+        self.setStyleSheet("""QWidget { background-color: #1e1e1e; color: #ffffff; font-family: 'Segoe UI'; }
+        QPushButton { background-color: #4CAF50; color: white; padding: 10px; border-radius: 6px; }
+        QPushButton:hover { background-color: #45a049; }
+        QLineEdit { padding: 10px; font-size: 14px; border-radius: 4px; border: 1px solid #555; background-color: #2d2d2d; color: #fff; }
+        QLabel { font-size: 13px; }""")
 
         layout = QVBoxLayout()
 
@@ -74,7 +55,21 @@ class BuzzImageGenApp(QWidget):
         self.setLayout(layout)
         self.last_image_path = None
 
+        # Load model in background
+        QTimer.singleShot(500, self.load_model_async)
+
+    def load_model_async(self):
+        def _load():
+            load_pipeline(MODEL_PATH)
+            self.model_loaded = True
+            QTimer.singleShot(0, lambda: QMessageBox.information(self, "BUZZ AI", "✅ Model Loaded Successfully!"))
+        threading.Thread(target=_load, daemon=True).start()
+
     def generate_image(self):
+        if not self.model_loaded:
+            QMessageBox.warning(self, "Model Loading", "🚧 Model is still loading. Please wait.")
+            return
+
         prompt = self.prompt_input.text().strip()
         if not prompt:
             QMessageBox.warning(self, "No Prompt", "Please enter a prompt to generate an image.")
@@ -93,9 +88,9 @@ class BuzzImageGenApp(QWidget):
             self.show_generated_image(path)
         except Exception as e:
             self.image_label.setText("❌ Failed to generate image.")
-            QMessageBox.critical(self, "Error", f"An error occurred:\n{e}")
+            QTimer.singleShot(0, lambda: QMessageBox.critical(self, "Error", f"An error occurred:\n{e}"))
         finally:
-            self.progress.setVisible(False)
+            QTimer.singleShot(0, lambda: self.progress.setVisible(False))
 
     def show_generated_image(self, path):
         pixmap = QPixmap(path)
