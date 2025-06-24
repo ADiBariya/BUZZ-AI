@@ -4,6 +4,7 @@ BUZZ-AI is a sleek desktop app that uses **Stable Diffusion XL** to generate stu
 
 > 🧠 Just type a prompt, and let BUZZ-AI bring your imagination to life.
 
+**ALWAYS CHANGE MODEL PATH ACCORDING TO YOUR NEED OTHERWISE ERROR COMES!!
 ---
 
 ## ✨ Features
