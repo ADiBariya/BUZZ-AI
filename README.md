@@ -1,4 +1,4 @@
-# 🚀 BUZZ-AI: Anime Image Generator using Stable Diffusion
+[# 🚀 BUZZ-AI: Anime Image Generator using Stable Diffusion
 
 BUZZ-AI is a sleek desktop app that uses **Stable Diffusion XL** to generate stunning anime-style images from your text prompts — powered by PyTorch, HuggingFace Diffusers, and PyQt6.
 
@@ -48,3 +48,4 @@ python frontend_gui.py
 
 or use CLI
 python run_cli.py --prompt "anime girl with white umbrella"
+](https://github.com/ADiBariya/BUZZ-AI)
